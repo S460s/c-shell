@@ -13,6 +13,9 @@
 
 void handle_input(char *input)
 {
+  if (strlen(input) == 0)
+    return;
+
   size_t size = 0;
   struct BuiltIn **builtins = create_builtins(&size);
   for (size_t i = 0; i < size; i++)
@@ -92,6 +95,7 @@ void handle_input(char *input)
 
 int main()
 {
+  init_pwd();
   while (1)
   {
     printf("$ ");
