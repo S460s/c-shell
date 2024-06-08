@@ -62,11 +62,11 @@ struct BuiltIn** create_builtins(size_t* size){
 
   struct BuiltIn* _exit = malloc(sizeof(struct BuiltIn));
   strcpy(_exit->command, "exit");
-  _echo->execute = execute_exit;
+  _exit->execute = execute_exit;
 
   struct BuiltIn* _type = malloc(sizeof(struct BuiltIn));
   strcpy(_type->command, "type");
-  _echo->execute = execute_type;
+  _type->execute = execute_type;
 
 
   *size = 3;

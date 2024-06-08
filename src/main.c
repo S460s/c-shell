@@ -12,6 +12,16 @@
 #include "util/util.h"
 
 void handle_input(char* input){
+    size_t size = 0;
+    struct BuiltIn** builtins = create_builtins(&size);     
+    for(size_t i = 0; i < size; i++){
+      struct BuiltIn* current = builtins[i];
+      if(strncmp(current->command, input, strlen(current->command)) == 0){
+        current->execute(input);
+        return;
+      }
+    }
+
   char* copy_input = malloc(strlen(input));
   strcpy(copy_input, input);
 
@@ -44,7 +54,6 @@ void handle_input(char* input){
         exit(EXIT_SUCCESS);
     }
 
-
     while(1){
     int status;
     pid_t done = wait(&status);
@@ -60,18 +69,9 @@ void handle_input(char* input){
     free(copy_input);
     free(args);
   }else{
-    size_t size = 0;
-    struct BuiltIn** builtins = create_builtins(&size);     
-    for(size_t i = 0; i < size; i++){
-      struct BuiltIn* current = builtins[i];
-      if(strcmp(current->command, input)){
-        current->execute(input);
-        return;
-      }
-    }
+    fprintf(stderr ,"%s: command not found\n", input);
   }
 
-  fprintf(stderr ,"%s: command not found\n", input);
   free(copy_input);
   free(program);
 }
