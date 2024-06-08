@@ -66,7 +66,7 @@ void handle_input(char* input){
       struct BuiltIn* current = builtins[i];
       if(strcmp(current->command, input)){
         current->execute(input);
-        break;
+        return;
       }
     }
   }
