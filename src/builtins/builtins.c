@@ -80,7 +80,6 @@ void init_pwd()
 
 ssize_t execute_pwd(char *input)
 {
-  printf("TEST\n");
   printf("%s\n", current_path);
   return 0;
 }
