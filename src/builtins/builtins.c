@@ -88,6 +88,7 @@ ssize_t execute_pwd(char *input)
 ssize_t execute_cd(char *input)
 {
   char *new_path = input + 3;
+
   int ok = access(new_path, X_OK);
   if (ok == -1)
   {
@@ -97,13 +98,21 @@ ssize_t execute_cd(char *input)
 
   strncpy(current_path, new_path, PATH_MAX - 16); // I had switched destination and src and it crashed the whole system
   snprintf(envpath, PATH_MAX, "PWD=%s", current_path);
-  printf("newenv %s\n", envpath);
+
   int okenv = putenv(envpath); // the envpath needs to live afterwards as putenv doesn't copy the string but gives a pointer to it
   if (okenv == -1)
   {
     fprintf(stderr, "error cannot set env\n");
     return -1;
   }
+
+  int chdirok = chdir(current_path);
+  if (chdirok == -1)
+  {
+    fprintf(stderr, "error chdir\n");
+    return -1;
+  }
+
   return 0;
 }
 
