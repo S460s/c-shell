@@ -85,20 +85,38 @@ ssize_t execute_pwd(char *input)
   return 0;
 }
 
-ssize_t execute_cd(char *input)
+ssize_t update_cwd(char *newpath)
 {
-  char *new_path = input + 3;
-
-  int ok = access(new_path, X_OK);
+  errno = 0;
+  int ok = access(newpath, X_OK);
   if (ok == -1)
   {
-    fprintf(stderr, "invalid path: %s\n", new_path);
+    if (errno == EACCES)
+    {
+      fprintf(stderr, "cd: permission denied: %s\n", newpath);
+    }
+    else
+    {
+      fprintf(stderr, "cd: invalid path: %s\n", newpath);
+    }
     return -1;
   }
 
-  strncpy(current_path, new_path, PATH_MAX - 16); // I had switched destination and src and it crashed the whole system
-  snprintf(envpath, PATH_MAX, "PWD=%s", current_path);
+  int chdirok = chdir(newpath);
+  if (chdirok == -1)
+  {
+    fprintf(stderr, "error chdir\n");
+    return -1;
+  }
 
+  char *pathname = getcwd((char *)current_path, PATH_MAX);
+  if (pathname == NULL)
+  {
+    fprintf(stderr, "error setting cwd\n");
+    return -1;
+  }
+
+  snprintf(envpath, PATH_MAX, "PWD=%s", current_path);
   int okenv = putenv(envpath); // the envpath needs to live afterwards as putenv doesn't copy the string but gives a pointer to it
   if (okenv == -1)
   {
@@ -106,14 +124,29 @@ ssize_t execute_cd(char *input)
     return -1;
   }
 
-  int chdirok = chdir(current_path);
-  if (chdirok == -1)
+  return 0;
+}
+
+ssize_t execute_cd(char *input)
+{
+  char *newpath = input + 3;
+
+  if (newpath[0] == '~')
   {
-    fprintf(stderr, "error chdir\n");
-    return -1;
+    char *home = getenv("HOME");
+    if (home == NULL)
+    {
+      fprintf(stderr, "error can't get home directory\n");
+      return -1;
+    }
+    printf("home: %s\n", home);
+
+    ssize_t ok = update_cwd(home);
+    return ok;
   }
 
-  return 0;
+  ssize_t ok = update_cwd(newpath);
+  return ok;
 }
 
 struct BuiltIn **create_builtins(size_t *size)
