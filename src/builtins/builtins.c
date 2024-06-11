@@ -9,12 +9,11 @@
 #include "../util/util.h"
 #include "builtins.h"
 
-ssize_t execute_exit(char *input)
+ssize_t execute_exit(char **input)
 {
-  char *arguments = input + 4;
   errno = 0;
   char *endptr;
-  int exit_status = strtol(arguments, &endptr, 10);
+  int exit_status = strtol(input[1], &endptr, 10);
 
   if (errno != 0)
   {
@@ -22,7 +21,7 @@ ssize_t execute_exit(char *input)
     exit(EXIT_FAILURE);
   }
 
-  if (endptr == arguments)
+  if (endptr == input[0])
   {
     fprintf(stderr, "No exit status was found\n");
     return -1;
@@ -31,35 +30,35 @@ ssize_t execute_exit(char *input)
   exit(exit_status);
 }
 
-ssize_t execute_echo(char *input)
+ssize_t execute_echo(char **input)
 {
-  printf("%s\n", input + 5);
+  printf("%s\n", input[1]);
   return 0;
 }
 
-ssize_t execute_type(char *input)
+ssize_t execute_type(char **input)
 {
   char builtins[][16] = {"echo", "type", "exit", "cd"};
-  char *arguments = input + 5;
+char* program_name = input[0];
 
   for (size_t i = 0; i < sizeof(builtins) / 16; i++)
   {
-    if (strncmp(builtins[i], arguments, strlen(builtins[i])) == 0)
+    if (strncmp(builtins[i], program_name, strlen(builtins[i])) == 0)
     {
-      printf("%s is a shell builtin\n", arguments);
+      printf("%s is a shell builtin\n", program_name);
       return 0;
     }
   }
 
-  char *result = command_path(arguments);
+  char *result = command_path(program_name);
   if (result != NULL)
   {
-    printf("%s is %s\n", arguments, result);
+    printf("%s is %s\n", program_name, result);
     free(result);
     return 0;
   }
 
-  printf("%s: not found\n", arguments);
+  printf("%s: not found\n", program_name);
   return -1;
 }
 
@@ -78,7 +77,7 @@ void init_pwd()
   }
 }
 
-ssize_t execute_pwd(char *input)
+ssize_t execute_pwd(char **input)
 {
   printf("%s\n", current_path);
   return 0;
@@ -126,9 +125,9 @@ ssize_t update_cwd(char *newpath)
   return 0;
 }
 
-ssize_t execute_cd(char *input)
+ssize_t execute_cd(char **input)
 {
-  char *newpath = input + 3;
+  char *newpath = input[1];
 
   if (newpath[0] == '~')
   {

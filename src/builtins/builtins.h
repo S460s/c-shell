@@ -6,7 +6,7 @@
 struct BuiltIn
 {
   char command[32];
-  ssize_t (*execute)(char *input);
+  ssize_t (*execute)(char **input);
 };
 
 struct BuiltIn **create_builtins(size_t *size);
