@@ -27,7 +27,6 @@ ssize_t execute_exit(char **input, size_t count)
     exit(EXIT_FAILURE);
   }
 
-
   exit(exit_status);
 }
 
@@ -40,7 +39,7 @@ ssize_t execute_echo(char **input, size_t count)
 ssize_t execute_type(char **input, size_t count)
 {
   char builtins[][16] = {"echo", "type", "exit", "cd"};
-  char* program_name = input[0];
+  char *program_name = input[0];
 
   for (size_t i = 0; i < sizeof(builtins) / 16; i++)
   {
@@ -64,11 +63,11 @@ ssize_t execute_type(char **input, size_t count)
 }
 
 char current_path[PATH_MAX];
-char envpath[PATH_MAX];
+#define ENV_MAX PATH_MAX + 8
+char envpath[ENV_MAX];
 
 void init_pwd()
 {
-  char pwd[PATH_MAX];
   char *pathname = getcwd((char *)current_path, PATH_MAX);
 
   if (pathname == NULL)
@@ -80,7 +79,8 @@ void init_pwd()
 
 ssize_t execute_pwd(char **input, size_t count)
 {
-  if(strlen(current_path) == 0) init_pwd();
+  if (strlen(current_path) == 0)
+    init_pwd();
   printf("%s\n", current_path);
   return 0;
 }
@@ -116,7 +116,7 @@ ssize_t update_cwd(char *newpath)
     return -1;
   }
 
-  snprintf(envpath, PATH_MAX, "PWD=%s", current_path);
+  snprintf(envpath, ENV_MAX, "PWD=%s", current_path);
   int okenv = putenv(envpath); // the envpath needs to live afterwards as putenv doesn't copy the string but gives a pointer to it
   if (okenv == -1)
   {
@@ -137,7 +137,6 @@ ssize_t execute_cd(char **input, size_t count)
       fprintf(stderr, "error can't get home directory\n");
       return -1;
     }
-    printf("home: %s\n", home);
 
     ssize_t ok = update_cwd(home);
     return ok;
@@ -147,36 +146,32 @@ ssize_t execute_cd(char **input, size_t count)
   return ok;
 }
 
-void free_builtins(struct BuiltIn** builtins ,size_t size){
-  printf("free builtins\n");
-  for(int i = 0; i < size; i++){ 
+void free_builtins(struct BuiltIn **builtins, size_t size)
+{
+  for (int i = 0; i < size; i++)
+  {
     free(builtins[i]);
   }
-  free(builtins);  
+  free(builtins);
 }
+
+struct BuiltIn *builtin(char *command_name, ssize_t (*execute)(char **input, size_t count))
+{
+  struct BuiltIn *_builtin = malloc(sizeof(struct BuiltIn));
+  strcpy(_builtin->command, command_name);
+  _builtin->execute = execute;
+  return _builtin;
+};
 
 struct BuiltIn **create_builtins(size_t *size)
 {
-  struct BuiltIn *_echo = malloc(sizeof(struct BuiltIn));
-  strcpy(_echo->command, "echo");
-  _echo->execute = execute_echo;
+  struct BuiltIn *_echo = builtin("echo", execute_echo);
+  struct BuiltIn *_exit = builtin("exit", execute_exit);
+  struct BuiltIn *_type = builtin("type", execute_type);
+  struct BuiltIn *_pwd = builtin("pwd", execute_pwd);
+  struct BuiltIn *_cd = builtin("cd", execute_cd);
 
-  struct BuiltIn *_exit = malloc(sizeof(struct BuiltIn));
-  strcpy(_exit->command, "exit");
-  _exit->execute = execute_exit;
-
-  struct BuiltIn *_type = malloc(sizeof(struct BuiltIn));
-  strcpy(_type->command, "type");
-  _type->execute = execute_type;
-
-  struct BuiltIn *_pwd = malloc(sizeof(struct BuiltIn));
-  strcpy(_pwd->command, "pwd");
-  _pwd->execute = execute_pwd;
-
-  struct BuiltIn *_cd = malloc(sizeof(struct BuiltIn));
-  strcpy(_cd->command, "cd");
-  _cd->execute = execute_cd;
-
+  // dynamic array might be better
   *size = 5;
   struct BuiltIn **builtins = malloc(sizeof(struct BuiltIn *) * (*size));
   builtins[0] = _echo;

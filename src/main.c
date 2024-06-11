@@ -8,13 +8,14 @@
 #include <dirent.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <linux/limits.h>
 
 #include "builtins/builtins.h"
 #include "util/util.h"
 
 ssize_t handle_input(char **input, size_t count)
 {
-  char* program_name = input[0];
+  char *program_name = input[0];
   ssize_t ok = 0;
 
   size_t size = 0;
@@ -46,8 +47,6 @@ ssize_t handle_input(char **input, size_t count)
       exit(EXIT_SUCCESS);
     }
 
-    printf("Hello from handle input\n");
-
     while (1)
     {
       int status;
@@ -60,9 +59,9 @@ ssize_t handle_input(char **input, size_t count)
       else
       {
         if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
-        { 
+        {
           fprintf(stderr, "Pid %d failed\n", done);
-          exit(1);
+          return -1;
         }
       }
     }
@@ -79,62 +78,67 @@ ssize_t handle_input(char **input, size_t count)
 
 // this can later tokenize the inputed string into an array
 // returned value should be freed
-char** parse_input(char* input, size_t* count){ 
+char **parse_input(char *input, size_t *count)
+{
   size_t length = strlen(input) + 1;
-  char* copy = malloc(length * (sizeof(char))); // is sizeof char always 1? 
+  char *copy = malloc(length * (sizeof(char))); // is sizeof char always 1?
   strncpy(copy, input, length);
 
-  char* command_name = strtok(copy, " ");
-  if(command_name == NULL){
+  char *command_name = strtok(copy, " ");
+  if (command_name == NULL)
+  {
     free(copy);
     return NULL;
   }
 
-  printf("command_name: %s\n", command_name);
-
   (*count)++;
-  char** argv = malloc(sizeof(char*) * 16); // will need to be dynamic
+  char **argv = malloc(sizeof(char *) * 16); // will need to be dynamic
   argv[0] = command_name;
 
   // there needs to be a dynamic array or a linked list to add to the new data
   size_t i = 1;
-  char* param;
-  while((param = strtok(NULL, " "))) {
-      (*count)++;
-      printf("param: %s\n", param);
-      if(param[0] == '$'){
-        char* envvar = getenv(param + 1);      
-        printf("env var: %s\n", envvar);
-        argv[i] = envvar;
-        continue;
+  char *param;
+  while ((param = strtok(NULL, " ")))
+  {
+    (*count)++;
+    if (param[0] == '$')
+    {
+      char *envvar = getenv(param + 1);
+      argv[i] = envvar;
+      continue;
     }
     argv[i] = param;
   }
 
-return argv;
+  return argv;
 }
 
-
 #define ANSI_COLOR_RED "\x1b[31m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_COLOR_RESET "\x1b[0m"
 
 int main()
 {
   ssize_t ok = 0;
   while (1)
   {
-    if(ok == -1) printf("%s$ %s", ANSI_COLOR_RED, ANSI_COLOR_RESET);
-    else printf("$ ");
+    char pwd[PATH_MAX];
+    char *pathname = getcwd((char *)pwd, PATH_MAX);
+
+    if (ok == -1)
+      printf("%s[%s]$ %s", ANSI_COLOR_RED, pwd, ANSI_COLOR_RESET);
+    else
+      printf("[%s]$ ", pwd);
 
     fflush(stdout);
     char *input = read_line();
     size_t count = 0;
-    char** parsed = parse_input(input, &count);
-    if(parsed == NULL) goto cleanup;
+    char **parsed = parse_input(input, &count);
+    if (parsed == NULL)
+      goto cleanup;
     ok = handle_input(parsed, count);
     free(parsed[0]);
     free(parsed);
-cleanup:
+  cleanup:
     free(input);
   }
 
