@@ -76,18 +76,13 @@ ssize_t handle_input(char **input, size_t count)
   return ok;
 }
 
-// this can later tokenize the inputed string into an array
 // returned value should be freed
 char **parse_input(char *input, size_t *count)
 {
-  size_t length = strlen(input) + 1;
-  char *copy = malloc(length * (sizeof(char))); // is sizeof char always 1?
-  strncpy(copy, input, length);
-
-  char *command_name = strtok(copy, " ");
+  char *command_name = strtok(input, " ");
   if (command_name == NULL)
   {
-    free(copy);
+    free(input);
     return NULL;
   }
 
@@ -131,15 +126,15 @@ int main()
 
     fflush(stdout);
     char *input = read_line();
+
     size_t count = 0;
     char **parsed = parse_input(input, &count);
     if (parsed == NULL)
-      goto cleanup;
+      continue;
+
     ok = handle_input(parsed, count);
     free(parsed[0]);
     free(parsed);
-  cleanup:
-    free(input);
   }
 
   return 0;
