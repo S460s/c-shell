@@ -9,8 +9,14 @@
 #include "../util/util.h"
 #include "builtins.h"
 
-ssize_t execute_exit(char **input)
+ssize_t execute_exit(char **input, size_t count)
 {
+  if (count == 1)
+  {
+    fprintf(stderr, "No exit status was found\n");
+    return -1;
+  }
+
   errno = 0;
   char *endptr;
   int exit_status = strtol(input[1], &endptr, 10);
@@ -21,25 +27,20 @@ ssize_t execute_exit(char **input)
     exit(EXIT_FAILURE);
   }
 
-  if (endptr == input[0])
-  {
-    fprintf(stderr, "No exit status was found\n");
-    return -1;
-  }
 
   exit(exit_status);
 }
 
-ssize_t execute_echo(char **input)
+ssize_t execute_echo(char **input, size_t count)
 {
   printf("%s\n", input[1]);
   return 0;
 }
 
-ssize_t execute_type(char **input)
+ssize_t execute_type(char **input, size_t count)
 {
   char builtins[][16] = {"echo", "type", "exit", "cd"};
-char* program_name = input[0];
+  char* program_name = input[0];
 
   for (size_t i = 0; i < sizeof(builtins) / 16; i++)
   {
@@ -77,8 +78,9 @@ void init_pwd()
   }
 }
 
-ssize_t execute_pwd(char **input)
+ssize_t execute_pwd(char **input, size_t count)
 {
+  if(strlen(current_path) == 0) init_pwd();
   printf("%s\n", current_path);
   return 0;
 }
@@ -125,11 +127,9 @@ ssize_t update_cwd(char *newpath)
   return 0;
 }
 
-ssize_t execute_cd(char **input)
+ssize_t execute_cd(char **input, size_t count)
 {
-  char *newpath = input[1];
-
-  if (newpath[0] == '~')
+  if (count == 1 || input[1][0] == '~')
   {
     char *home = getenv("HOME");
     if (home == NULL)
@@ -143,7 +143,7 @@ ssize_t execute_cd(char **input)
     return ok;
   }
 
-  ssize_t ok = update_cwd(newpath);
+  ssize_t ok = update_cwd(input[1]);
   return ok;
 }
 

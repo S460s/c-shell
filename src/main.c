@@ -15,6 +15,7 @@
 ssize_t handle_input(char **input, size_t count)
 {
   char* program_name = input[0];
+  ssize_t ok = 0;
 
   size_t size = 0;
   struct BuiltIn **builtins = create_builtins(&size);
@@ -23,38 +24,16 @@ ssize_t handle_input(char **input, size_t count)
     struct BuiltIn *current = builtins[i];
     if (strncmp(current->command, program_name, strlen(current->command)) == 0)
     {
-      ssize_t ok = current->execute(input);
+      ok = current->execute(input, count);
       free_builtins(builtins, size);
       return ok;
     }
   }
   free_builtins(builtins, size);
 
-  // char *copy_input = malloc(strlen(input));
-  // strcpy(copy_input, input);
-
-  // char *program_name = strtok(copy_input, " ");
-  // char *program = command_path(program_name);
-
   char *program = command_path(program_name);
-
   if (program)
   {
-    // args should hold pointers to chunks of "strtok"ed string so freeing the string directly should be fine
-    // char **args = malloc(sizeof(char *) * 16);
-    // char *copy_input = malloc(strlen(input));
-    // strcpy(copy_input, input);
-    // char *program_name = strtok(copy_input, " ");
-    // args[0] = program_name;
-
-    // char *arg;
-    // size_t i;
-    // for (i = 1; (arg = strtok(NULL, " ")) != NULL; i++)
-    // {
-      // args[i] = arg;
-    // }
-    // args[i] = NULL;
-
     pid_t pid = fork();
 
     switch (pid)
@@ -63,7 +42,7 @@ ssize_t handle_input(char **input, size_t count)
       perror("fork");
       exit(EXIT_FAILURE);
     case 0:
-      execv(program, input);
+      ok = execv(program, input);
       exit(EXIT_SUCCESS);
     }
 
@@ -81,7 +60,7 @@ ssize_t handle_input(char **input, size_t count)
       else
       {
         if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
-        { //
+        { 
           fprintf(stderr, "Pid %d failed\n", done);
           exit(1);
         }
@@ -91,9 +70,11 @@ ssize_t handle_input(char **input, size_t count)
   else
   {
     fprintf(stderr, "%s: command not found\n", program_name);
+    ok = -1;
   }
 
   free(program);
+  return ok;
 }
 
 // this can later tokenize the inputed string into an array
@@ -111,14 +92,15 @@ char** parse_input(char* input, size_t* count){
 
   printf("command_name: %s\n", command_name);
 
-  *count = 16;
-  char** argv = malloc(sizeof(char*) * (*count)); // will need to be dynamic
+  (*count)++;
+  char** argv = malloc(sizeof(char*) * 16); // will need to be dynamic
   argv[0] = command_name;
 
   // there needs to be a dynamic array or a linked list to add to the new data
   size_t i = 1;
   char* param;
   while((param = strtok(NULL, " "))) {
+      (*count)++;
       printf("param: %s\n", param);
       if(param[0] == '$'){
         char* envvar = getenv(param + 1);      
@@ -132,18 +114,24 @@ char** parse_input(char* input, size_t* count){
 return argv;
 }
 
+
+#define ANSI_COLOR_RED "\x1b[31m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
 int main()
 {
-  init_pwd();
+  ssize_t ok = 0;
   while (1)
   {
-    printf("$ ");
+    if(ok == -1) printf("%s$ %s", ANSI_COLOR_RED, ANSI_COLOR_RESET);
+    else printf("$ ");
+
     fflush(stdout);
     char *input = read_line();
     size_t count = 0;
     char** parsed = parse_input(input, &count);
     if(parsed == NULL) goto cleanup;
-    int ok = handle_input(parsed, count);
+    ok = handle_input(parsed, count);
     free(parsed[0]);
     free(parsed);
 cleanup:
