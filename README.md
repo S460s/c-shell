@@ -15,3 +15,4 @@ As a start I used the codecrafters "Build your own shell" assignments.
 
 ## Valgrind
 - still reachable at the end of the program is because of calling exit before freeing some resources
+![alt text](./img/image.png)

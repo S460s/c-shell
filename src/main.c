@@ -99,6 +99,13 @@ char **parse_input(char *input, size_t *count)
     if (param[0] == '$')
     {
       char *envvar = getenv(param + 1);
+      if (envvar == NULL) // can be done to add \n as well
+      {
+        fprintf(stderr, "error: undefined env variable: %s\n", param);
+        free(input);
+        free(argv);
+        return NULL;
+      }
       argv[i] = envvar;
       continue;
     }
@@ -130,7 +137,10 @@ int main()
     size_t count = 0;
     char **parsed = parse_input(input, &count);
     if (parsed == NULL)
+    {
+      ok = -1;
       continue;
+    }
 
     ok = handle_input(parsed, count);
     free(parsed[0]);
