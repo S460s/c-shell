@@ -12,9 +12,9 @@
 #include "builtins/builtins.h"
 #include "util/util.h"
 
-void handle_input(char *input)
+void handle_input(char **input)
 {
-  if (strlen(input) == 0)
+  /* if (strlen(input) == 0)
     return;
 
   size_t size = 0;
@@ -31,28 +31,33 @@ void handle_input(char *input)
   }
   free_builtins(builtins, size);
 
-  char *copy_input = malloc(strlen(input));
-  strcpy(copy_input, input);
+*/
+  
+  // char *copy_input = malloc(strlen(input));
+  // strcpy(copy_input, input);
 
-  char *program_name = strtok(copy_input, " ");
+  // char *program_name = strtok(copy_input, " ");
+  // char *program = command_path(program_name);
+
+  char* program_name = input[0];
   char *program = command_path(program_name);
 
   if (program)
   {
     // args should hold pointers to chunks of "strtok"ed string so freeing the string directly should be fine
-    char **args = malloc(sizeof(char *) * 16);
-    char *copy_input = malloc(strlen(input));
-    strcpy(copy_input, input);
-    char *program_name = strtok(copy_input, " ");
-    args[0] = program_name;
+    // char **args = malloc(sizeof(char *) * 16);
+    // char *copy_input = malloc(strlen(input));
+    // strcpy(copy_input, input);
+    // char *program_name = strtok(copy_input, " ");
+    // args[0] = program_name;
 
-    char *arg;
-    size_t i;
-    for (i = 1; (arg = strtok(NULL, " ")) != NULL; i++)
-    {
-      args[i] = arg;
-    }
-    args[i] = NULL;
+    // char *arg;
+    // size_t i;
+    // for (i = 1; (arg = strtok(NULL, " ")) != NULL; i++)
+    // {
+      // args[i] = arg;
+    // }
+    // args[i] = NULL;
 
     pid_t pid = fork();
 
@@ -62,7 +67,7 @@ void handle_input(char *input)
       perror("fork");
       exit(EXIT_FAILURE);
     case 0:
-      execv(program, args);
+      execv(program, input);
       exit(EXIT_SUCCESS);
     }
 
@@ -86,24 +91,21 @@ void handle_input(char *input)
         }
       }
     }
-    free(copy_input);
-    free(args);
   }
   else
   {
-    fprintf(stderr, "%s: command not found\n", input);
+    fprintf(stderr, "%s: command not found\n", program_name);
   }
 
-  free(copy_input);
   free(program);
 }
 
 // this can later tokenize the inputed string into an array
 // returned value should be freed
 char** parse_input(char* input, size_t* count){ 
-  size_t length = strlen(input);
+  size_t length = strlen(input) + 1;
   char* copy = malloc(length * (sizeof(char))); // is sizeof char always 1? 
-  strncat(copy, input, length);
+  strncpy(copy, input, length);
 
   char* command_name = strtok(copy, " ");
   printf("command_name: %s\n", command_name);
@@ -139,7 +141,7 @@ int main()
     char *input = read_line();
     size_t count = 0;
     char** parsed = parse_input(input, &count);
-    handle_input(input);
+    handle_input(parsed);
 
     free(input);
     free(parsed[0]);// parsed is an array of pointers to chucnks of strings
