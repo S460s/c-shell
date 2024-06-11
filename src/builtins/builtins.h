@@ -10,6 +10,7 @@ struct BuiltIn
 };
 
 struct BuiltIn **create_builtins(size_t *size);
+void free_builtins(struct BuiltIn** builtins ,size_t size);
 
 void init_pwd();
 

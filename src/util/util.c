@@ -7,8 +7,9 @@
 
 char *read_line()
 {
-  size_t size = 1; // getline automatically "realloc"s more space
-  char *buffer = malloc(sizeof(char) * size);
+  size_t size = 0; // getline automatically "realloc"s more space
+  char *buffer = NULL;
+  char *buffer_addr = buffer; 
   ssize_t status = getline(&buffer, &size, stdin);
   if (status == -1)
   {
@@ -24,6 +25,7 @@ char *read_line()
     }
   }
 
+  printf("buffer later: %p\n", buffer);
   return buffer;
 }
 

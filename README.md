@@ -11,3 +11,7 @@ As a start I used the codecrafters "Build your own shell" assignments.
 - evaluation of ENV variables
 - comments (in the shell)
 - update the builtin system
+
+
+## Valgrind
+- still reachable at the end of the program is because of calling exit before freeing some resources

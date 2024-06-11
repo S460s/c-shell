@@ -39,7 +39,7 @@ ssize_t execute_echo(char *input)
 
 ssize_t execute_type(char *input)
 {
-  char builtins[][16] = {"echo", "type", "exit"};
+  char builtins[][16] = {"echo", "type", "exit", "cd"};
   char *arguments = input + 5;
 
   for (size_t i = 0; i < sizeof(builtins) / 16; i++)
@@ -146,6 +146,14 @@ ssize_t execute_cd(char *input)
 
   ssize_t ok = update_cwd(newpath);
   return ok;
+}
+
+void free_builtins(struct BuiltIn** builtins ,size_t size){
+  printf("free builtins\n");
+  for(int i = 0; i < size; i++){ 
+    free(builtins[i]);
+  }
+  free(builtins);  
 }
 
 struct BuiltIn **create_builtins(size_t *size)

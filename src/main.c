@@ -1,3 +1,4 @@
+#include <math.h>
 #include <signal.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -24,9 +25,11 @@ void handle_input(char *input)
     if (strncmp(current->command, input, strlen(current->command)) == 0)
     {
       current->execute(input);
+      free_builtins(builtins, size);
       return;
     }
   }
+  free_builtins(builtins, size);
 
   char *copy_input = malloc(strlen(input));
   strcpy(copy_input, input);
@@ -63,6 +66,8 @@ void handle_input(char *input)
       exit(EXIT_SUCCESS);
     }
 
+    printf("Hello from handle input\n");
+
     while (1)
     {
       int status;
@@ -93,6 +98,37 @@ void handle_input(char *input)
   free(program);
 }
 
+// this can later tokenize the inputed string into an array
+// returned value should be freed
+char** parse_input(char* input, size_t* count){ 
+  size_t length = strlen(input);
+  char* copy = malloc(length * (sizeof(char))); // is sizeof char always 1? 
+  strncat(copy, input, length);
+
+  char* command_name = strtok(copy, " ");
+  printf("command_name: %s\n", command_name);
+
+  *count = 16;
+  char** argv = malloc(sizeof(char*) * (*count)); // will need to be dynamic
+  argv[0] = command_name;
+
+  // there needs to be a dynamic array or a linked list to add to the new data
+  size_t i = 1;
+  char* param;
+  while((param = strtok(NULL, " "))) {
+      printf("param: %s\n", param);
+      if(param[0] == '$'){
+        char* envvar = getenv(param + 1);      
+        printf("env var: %s\n", envvar);
+        argv[i] = envvar;
+        continue;
+    }
+    argv[i] = param;
+  }
+
+return argv;
+}
+
 int main()
 {
   init_pwd();
@@ -101,8 +137,13 @@ int main()
     printf("$ ");
     fflush(stdout);
     char *input = read_line();
+    size_t count = 0;
+    char** parsed = parse_input(input, &count);
     handle_input(input);
+
     free(input);
+    free(parsed[0]);// parsed is an array of pointers to chucnks of strings
+    free(parsed);
   }
 
   return 0;
