@@ -14,6 +14,8 @@
 
 void handle_input(char **input)
 {
+
+  if(input == NULL) return;
   /* if (strlen(input) == 0)
     return;
 
@@ -108,6 +110,11 @@ char** parse_input(char* input, size_t* count){
   strncpy(copy, input, length);
 
   char* command_name = strtok(copy, " ");
+  if(command_name == NULL){
+    free(copy);
+    return NULL;
+  }
+
   printf("command_name: %s\n", command_name);
 
   *count = 16;
@@ -141,11 +148,12 @@ int main()
     char *input = read_line();
     size_t count = 0;
     char** parsed = parse_input(input, &count);
+    if(parsed == NULL) goto cleanup;
     handle_input(parsed);
-
-    free(input);
     free(parsed[0]);// parsed is an array of pointers to chucnks of strings
     free(parsed);
+cleanup:
+    free(input);
   }
 
   return 0;
